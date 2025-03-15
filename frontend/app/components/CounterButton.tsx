@@ -15,12 +15,17 @@ import {
   getBase58Decoder,
   address,
   Address,
+  getProgramDerivedAddress,
 } from "@solana/kit";
 import { createRecentSignatureConfirmationPromiseFactory } from "@solana/transaction-confirmation";
 import { type UiWalletAccount } from "@wallet-standard/react";
 import { useContext, useState, useEffect } from "react";
 import { RpcContext } from "../context/RpcContext";
-import { getIncrementInstruction, fetchCounter } from "@/sdk";
+import {
+  getIncrementInstruction,
+  fetchCounter,
+  COUNTER_PROGRAM_ADDRESS,
+} from "@/sdk";
 import { install } from "@solana/webcrypto-ed25519-polyfill";
 import { SelectedWalletAccountContext } from "../context/SelectedWalletAccountContext";
 install();
@@ -65,7 +70,7 @@ function ConnectedButton({
           appendTransactionMessageInstruction(
             getIncrementInstruction({
               user: signer,
-              counter: address(counterAddress),
+              counter: counterAddress,
             }),
             m
           )
@@ -125,24 +130,33 @@ function ConnectedButton({
 
 // Main counter component
 export function CounterButton() {
-  const counterAddress = address(
-    "C9q5pGjGzrKz1qCM6UPBZiCGcJcHPF4gZn7Bmn6B8oQP"
-  );
+  const [counterAddress, setCounterAddress] = useState<Address>();
   const [selectedWalletAccount] = useContext(SelectedWalletAccountContext);
   const { rpc } = useContext(RpcContext);
   const [count, setCount] = useState<number | undefined>();
 
-  // Load counter value
+  // Combined function to derive PDA and load counter value
   const loadCounter = async () => {
     try {
-      const counterAccount = await fetchCounter(rpc, counterAddress);
+      // First  derive the PDA
+      const pdaResult = await getProgramDerivedAddress({
+        programAddress: COUNTER_PROGRAM_ADDRESS,
+        seeds: ["counter"],
+      });
+      // Update the counter address with the PDA
+      const pdaAddress = pdaResult[0];
+      setCounterAddress(pdaAddress);
+
+      // Now fetch the counter data
+      const counterAccount = await fetchCounter(rpc, pdaAddress);
       setCount(Number(counterAccount.data.count));
     } catch (e) {
       console.error("Failed to load counter value:", e);
+    } finally {
     }
   };
 
-  // Load initial counter value
+  // Load counter on mount
   useEffect(() => {
     loadCounter();
   }, []);
@@ -153,7 +167,7 @@ export function CounterButton() {
         <p className="text-2xl font-bold">Count: {count}</p>
       )}
 
-      {selectedWalletAccount ? (
+      {selectedWalletAccount && counterAddress ? (
         <ConnectedButton
           account={selectedWalletAccount}
           counterAddress={counterAddress}

@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useCallback } from "react";
 import Image from "next/image";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import {
   UiWallet,
   UiWalletAccount,
@@ -84,20 +84,13 @@ export function WalletButton({ children }: { children?: React.ReactNode }) {
   // Wallet Icon Component
   const WalletIcon = ({
     wallet,
-    loading,
     size = 18,
   }: {
     wallet: UiWallet;
-    loading?: boolean;
     size?: number;
   }) => (
     <div className="relative">
-      {loading && (
-        <Loader2 className="h-4 w-4 animate-spin absolute inset-0 m-auto" />
-      )}
-      <Avatar
-        className={cn(`h-[${size}px] w-[${size}px]`, loading && "opacity-50")}
-      >
+      <Avatar style={{ width: `${size}px`, height: `${size}px` }}>
         <AvatarImage src={wallet.icon} alt={wallet.name} />
         <AvatarFallback className="text-xs">
           {wallet.name.slice(0, 1)}
@@ -182,7 +175,7 @@ export function WalletButton({ children }: { children?: React.ReactNode }) {
       return (
         <DropdownMenuItem disabled={isPending} onClick={handleConnect}>
           <div className="flex items-center gap-2">
-            <WalletIcon wallet={wallet} loading={isPending} />
+            <WalletIcon wallet={wallet} />
             <span className="truncate">{wallet.name}</span>
           </div>
         </DropdownMenuItem>
@@ -194,12 +187,12 @@ export function WalletButton({ children }: { children?: React.ReactNode }) {
       <DropdownMenuSub>
         <DropdownMenuSubTrigger className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <WalletIcon wallet={wallet} loading={isPending} />
+            <WalletIcon wallet={wallet} />
             <span className="truncate">{wallet.name}</span>
           </div>
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
-          <DropdownMenuLabel>Account</DropdownMenuLabel>
+          <DropdownMenuLabel>Accounts</DropdownMenuLabel>
           <DropdownMenuRadioGroup value={selectedWalletAccount?.address}>
             {wallet.accounts.map((account) => (
               <DropdownMenuRadioItem
@@ -210,7 +203,7 @@ export function WalletButton({ children }: { children?: React.ReactNode }) {
                   closeMenu();
                 }}
               >
-                {account.address.slice(0, 4)}...{account.address.slice(-4)}
+                {account.address.slice(0, 8)}&hellip;
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>
