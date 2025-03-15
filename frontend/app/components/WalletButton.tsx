@@ -3,7 +3,6 @@
 import React, { useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import { AlertTriangle, Loader2 } from "lucide-react";
-import { StandardConnect, StandardDisconnect } from "@wallet-standard/core";
 import {
   UiWallet,
   UiWalletAccount,
@@ -40,190 +39,129 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { useSelectedWalletAccount } from "../context/useSelectedWalletAccount";
+import { useSelectedWalletAccount } from "../context/SelectedWalletAccountContext";
 
 export function WalletButton({ children }: { children?: React.ReactNode }) {
-  //   const { wallet, setWallet, chain, rpc } = useWallet();
-  //   console.log(wallet);
-  //   console.log(chain);
-  //   console.log(rpc);
   const { current: NO_ERROR } = useRef(Symbol());
   const wallets = useWallets();
   const [selectedWalletAccount, setSelectedWalletAccount] =
     useSelectedWalletAccount();
   const [error, setError] = useState<unknown>(NO_ERROR);
-  const [forceClose, setForceClose] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Helper function to get error message
+  // -------- Helper Functions --------
+
+  // Get error message from various error types
   const getErrorMessage = (
     error: unknown,
-    fallback: string = "Unknown error"
+    fallback = "Unknown error"
   ): string => {
     if (error instanceof Error) return error.message;
     if (typeof error === "string") return error;
     return fallback;
   };
 
-  // Wallet Account Icon Component
-  const WalletAccountIcon = ({
-    account,
-    ...imageProps
-  }: { account: UiWalletAccount } & Omit<
-    React.ComponentProps<typeof Image>,
-    "src"
-  >) => {
-    const wallets = useWallets();
-    let icon;
-    if (account.icon) {
-      icon = account.icon;
-    } else {
-      for (const wallet of wallets) {
-        if (uiWalletAccountBelongsToUiWallet(account, wallet)) {
-          icon = wallet.icon;
-          break;
-        }
+  // Get wallet icon for an account
+  const getWalletIcon = (account: UiWalletAccount) => {
+    if (account.icon) return account.icon;
+
+    for (const wallet of wallets) {
+      if (uiWalletAccountBelongsToUiWallet(account, wallet)) {
+        return wallet.icon;
       }
     }
-    return icon ? <Image src={icon} {...imageProps} alt="" /> : null;
+    return null;
   };
 
-  // Wallet Menu Item Content Component
-  const WalletMenuItemContent = ({
-    children,
-    loading,
+  // Close menu and reset error
+  const closeMenu = useCallback(() => {
+    setIsMenuOpen(false);
+    setError(NO_ERROR);
+  }, []);
+
+  // -------- Components --------
+
+  // Wallet Icon Component
+  const WalletIcon = ({
     wallet,
+    loading,
+    size = 18,
   }: {
-    children?: React.ReactNode;
-    loading?: boolean;
     wallet: UiWallet;
-  }) => {
-    return (
-      <div className="flex items-center gap-2">
-        <div className="relative">
-          {loading && (
-            <Loader2 className="h-4 w-4 animate-spin absolute inset-0 m-auto" />
-          )}
-          <Avatar className={cn("h-[18px] w-[18px]", loading && "opacity-50")}>
-            <AvatarImage src={wallet.icon} alt={wallet.name} />
-            <AvatarFallback className="text-xs">
-              {wallet.name.slice(0, 1)}
-            </AvatarFallback>
-          </Avatar>
-        </div>
-        <span className="truncate">{children ?? wallet.name}</span>
-      </div>
-    );
-  };
+    loading?: boolean;
+    size?: number;
+  }) => (
+    <div className="relative">
+      {loading && (
+        <Loader2 className="h-4 w-4 animate-spin absolute inset-0 m-auto" />
+      )}
+      <Avatar
+        className={cn(`h-[${size}px] w-[${size}px]`, loading && "opacity-50")}
+      >
+        <AvatarImage src={wallet.icon} alt={wallet.name} />
+        <AvatarFallback className="text-xs">
+          {wallet.name.slice(0, 1)}
+        </AvatarFallback>
+      </Avatar>
+    </div>
+  );
 
   // Error Dialog Component
-  const ErrorDialog = ({
-    error,
-    onClose,
-    title,
-  }: {
-    error: unknown;
-    onClose?: () => false | void;
-    title?: string;
-  }) => {
-    const [isOpen, setIsOpen] = useState(true);
+  const ErrorDialog = () => (
+    <AlertDialog
+      open={error !== NO_ERROR}
+      onOpenChange={() => setError(NO_ERROR)}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-destructive">
+            Error
+          </AlertDialogTitle>
+          <AlertDialogDescription className="border-l-4 border-muted p-4 italic">
+            {getErrorMessage(error)}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogAction asChild>
+            <Button>Close</Button>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 
-    return (
-      <AlertDialog
-        open={isOpen}
-        onOpenChange={(open: boolean) => {
-          if (!open) {
-            if (!onClose || onClose() !== false) {
-              setIsOpen(false);
-            }
-          }
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-destructive">
-              {title ?? "We encountered the following error"}
-            </AlertDialogTitle>
-            <AlertDialogDescription className="border-l-4 border-muted p-4 italic">
-              {getErrorMessage(error, "Unknown")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction asChild>
-              <Button>Close</Button>
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    );
-  };
-
-  // Unconnectable Wallet Menu Item Component
-  const UnconnectableWalletMenuItem = ({
-    error,
-    wallet,
-  }: {
-    error: unknown;
-    wallet: UiWallet;
-  }) => {
-    const [dialogIsOpen, setDialogIsOpen] = useState(false);
-
-    return (
-      <>
-        <DropdownMenuItem
-          disabled
-          onClick={() => setDialogIsOpen(true)}
-          className="flex justify-between items-center"
-        >
-          <WalletMenuItemContent wallet={wallet}>
-            <span className="line-through">{wallet.name}</span>
-          </WalletMenuItemContent>
-          <AlertTriangle className="h-4 w-4 ml-2" />
-        </DropdownMenuItem>
-
-        {dialogIsOpen ? (
-          <ErrorDialog
-            error={error}
-            onClose={() => setDialogIsOpen(false)}
-            title="Unconnectable wallet"
-          />
-        ) : null}
-      </>
-    );
-  };
-
-  // Connect Wallet Menu Item Component
-  const ConnectWalletMenuItem = ({ wallet }: { wallet: UiWallet }) => {
+  // Wallet Menu Item Component
+  const WalletMenuItem = ({ wallet }: { wallet: UiWallet }) => {
     const [isConnecting, connect] = useConnect(wallet);
     const [isDisconnecting, disconnect] = useDisconnect(wallet);
     const isPending = isConnecting || isDisconnecting;
     const isConnected = wallet.accounts.length > 0;
 
-    const handleConnectClick = useCallback(async () => {
+    // Handle wallet connect
+    const handleConnect = async () => {
       try {
         const existingAccounts = [...wallet.accounts];
         const nextAccounts = await connect();
-        // Try to choose the first never-before-seen account.
-        for (const nextAccount of nextAccounts) {
-          if (
-            !existingAccounts.some((existingAccount) =>
-              uiWalletAccountsAreSame(nextAccount, existingAccount)
-            )
-          ) {
-            setSelectedWalletAccount(nextAccount);
-            setForceClose(true);
-            return;
-          }
-        }
-        // Failing that, choose the first account in the list.
-        if (nextAccounts[0]) {
-          setSelectedWalletAccount(nextAccounts[0]);
-          setForceClose(true);
+
+        // Find the first new account, or use the first account
+        const accountToSelect =
+          nextAccounts.find(
+            (nextAccount) =>
+              !existingAccounts.some((existingAccount) =>
+                uiWalletAccountsAreSame(nextAccount, existingAccount)
+              )
+          ) || nextAccounts[0];
+
+        if (accountToSelect) {
+          setSelectedWalletAccount(accountToSelect);
+          closeMenu();
         }
       } catch (e) {
         setError(e);
       }
-    }, [connect, wallet.accounts]);
+    };
 
+    // Handle wallet disconnect
     const handleDisconnect = async (e: Event) => {
       e.preventDefault();
       try {
@@ -239,18 +177,29 @@ export function WalletButton({ children }: { children?: React.ReactNode }) {
       }
     };
 
-    // Main component return
+    // If wallet is not connected, show a single menu item for connecting
+    if (!isConnected) {
+      return (
+        <DropdownMenuItem disabled={isPending} onClick={handleConnect}>
+          <div className="flex items-center gap-2">
+            <WalletIcon wallet={wallet} loading={isPending} />
+            <span className="truncate">{wallet.name}</span>
+          </div>
+        </DropdownMenuItem>
+      );
+    }
+
+    // If wallet is connected, show a submenu with accounts
     return (
-      <DropdownMenuSub open={!isConnected ? false : undefined}>
-        <DropdownMenuSubTrigger
-          className="flex items-center justify-between"
-          disabled={isPending}
-          onClick={!isConnected ? handleConnectClick : undefined}
-        >
-          <WalletMenuItemContent loading={isPending} wallet={wallet} />
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <WalletIcon wallet={wallet} loading={isPending} />
+            <span className="truncate">{wallet.name}</span>
+          </div>
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
-          <DropdownMenuLabel>Accounts</DropdownMenuLabel>
+          <DropdownMenuLabel>Account</DropdownMenuLabel>
           <DropdownMenuRadioGroup value={selectedWalletAccount?.address}>
             {wallet.accounts.map((account) => (
               <DropdownMenuRadioItem
@@ -258,10 +207,10 @@ export function WalletButton({ children }: { children?: React.ReactNode }) {
                 value={account.address}
                 onSelect={() => {
                   setSelectedWalletAccount(account);
-                  setForceClose(true);
+                  closeMenu();
                 }}
               >
-                {account.address.slice(0, 8)}&hellip;
+                {account.address.slice(0, 4)}...{account.address.slice(-4)}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>
@@ -277,44 +226,18 @@ export function WalletButton({ children }: { children?: React.ReactNode }) {
     );
   };
 
-  // Render wallet item
-  function renderItem(wallet: UiWallet) {
-    try {
-      return <ConnectWalletMenuItem wallet={wallet} />;
-    } catch (error) {
-      return <UnconnectableWalletMenuItem error={error} wallet={wallet} />;
-    }
-  }
-
-  // Filter wallets by support for standard connect/disconnect
-  const walletsThatSupportStandardConnect = [];
-  const unconnectableWallets = [];
-
-  for (const wallet of wallets) {
-    if (
-      wallet.features.includes(StandardConnect) &&
-      wallet.features.includes(StandardDisconnect)
-    ) {
-      walletsThatSupportStandardConnect.push(wallet);
-    } else {
-      unconnectableWallets.push(wallet);
-    }
-  }
-
+  // -------- Main Component Render --------
   return (
     <>
-      <DropdownMenu
-        open={forceClose ? false : undefined}
-        onOpenChange={() => setForceClose(false)}
-      >
+      <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="outline">
             {selectedWalletAccount ? (
               <>
-                <WalletAccountIcon
-                  account={selectedWalletAccount}
-                  width="18"
-                  height="18"
+                <Image
+                  src={getWalletIcon(selectedWalletAccount) || ""}
+                  width={18}
+                  height={18}
                   alt=""
                 />
                 <span className="ml-2">
@@ -336,29 +259,15 @@ export function WalletButton({ children }: { children?: React.ReactNode }) {
               </AlertDescription>
             </Alert>
           ) : (
-            <>
-              {walletsThatSupportStandardConnect.map((wallet) => (
-                <React.Fragment key={wallet.name}>
-                  {renderItem(wallet)}
-                </React.Fragment>
-              ))}
-              {unconnectableWallets.length > 0 && (
-                <>
-                  <DropdownMenuSeparator />
-                  {unconnectableWallets.map((wallet) => (
-                    <React.Fragment key={wallet.name}>
-                      {renderItem(wallet)}
-                    </React.Fragment>
-                  ))}
-                </>
-              )}
-            </>
+            wallets.map((wallet) => (
+              <WalletMenuItem key={wallet.name} wallet={wallet} />
+            ))
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-      {error !== NO_ERROR ? (
-        <ErrorDialog error={error} onClose={() => setError(NO_ERROR)} />
-      ) : null}
+
+      {/* Error dialog renders conditionally based on error state */}
+      {error !== NO_ERROR && <ErrorDialog />}
     </>
   );
 }

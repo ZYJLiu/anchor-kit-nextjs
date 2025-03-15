@@ -1,7 +1,6 @@
 "use client";
-import { ChainContextProvider } from "./ChainContextProvider";
-import { SelectedWalletAccountContextProvider } from "./SelectedWalletAccountContextProvider";
-import { RpcContextProvider } from "./RpcContextProvider";
+import { SelectedWalletAccountProvider } from "./SelectedWalletAccountContext";
+import { RpcContextProvider } from "./RpcContext";
 
 type Props = {
   children: React.ReactNode;
@@ -9,10 +8,8 @@ type Props = {
 
 export function Providers({ children }: Props) {
   return (
-    <ChainContextProvider>
-      <SelectedWalletAccountContextProvider>
-        <RpcContextProvider>{children}</RpcContextProvider>
-      </SelectedWalletAccountContextProvider>
-    </ChainContextProvider>
+    <RpcContextProvider>
+      <SelectedWalletAccountProvider>{children}</SelectedWalletAccountProvider>
+    </RpcContextProvider>
   );
 }
