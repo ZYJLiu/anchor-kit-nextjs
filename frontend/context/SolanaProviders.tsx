@@ -6,7 +6,7 @@ type Props = {
   children: React.ReactNode;
 };
 
-export function Providers({ children }: Props) {
+export function SolanaProviders({ children }: Props) {
   return (
     <RpcContextProvider>
       <SelectedWalletAccountProvider>{children}</SelectedWalletAccountProvider>

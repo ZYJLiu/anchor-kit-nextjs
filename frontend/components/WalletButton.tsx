@@ -38,8 +38,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
 import { useSelectedWalletAccount } from "../context/SelectedWalletAccountContext";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function WalletButton({ children }: { children?: React.ReactNode }) {
   const { current: NO_ERROR } = useRef(Symbol());
@@ -221,46 +226,59 @@ export function WalletButton({ children }: { children?: React.ReactNode }) {
 
   // -------- Main Component Render --------
   return (
-    <>
-      <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline">
-            {selectedWalletAccount ? (
-              <>
-                <Image
-                  src={getWalletIcon(selectedWalletAccount) || ""}
-                  width={18}
-                  height={18}
-                  alt=""
-                />
-                <span className="ml-2">
-                  {selectedWalletAccount.address.slice(0, 8)}
-                </span>
-              </>
-            ) : (
-              children || "Connect Wallet"
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[200px]">
-          {wallets.length === 0 ? (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Warning</AlertTitle>
-              <AlertDescription>
-                This browser has no wallets installed.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            wallets.map((wallet) => (
-              <WalletMenuItem key={wallet.name} wallet={wallet} />
-            ))
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* Error dialog renders conditionally based on error state */}
-      {error !== NO_ERROR && <ErrorDialog />}
-    </>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="inline-block">
+            <>
+              <ErrorDialog />
+              <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="h-11 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none"
+                  >
+                    {selectedWalletAccount ? (
+                      <>
+                        <Image
+                          src={getWalletIcon(selectedWalletAccount) || ""}
+                          width={18}
+                          height={18}
+                          alt=""
+                        />
+                        <span className="ml-2">
+                          {selectedWalletAccount.address.slice(0, 8)}
+                        </span>
+                      </>
+                    ) : (
+                      children || "Connect Wallet"
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[200px]">
+                  {wallets.length === 0 ? (
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Warning</AlertTitle>
+                      <AlertDescription>
+                        No wallet adapters found. Please install a compatible
+                        wallet.
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    wallets.map((wallet) => (
+                      <WalletMenuItem key={wallet.name} wallet={wallet} />
+                    ))
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Devnet Only</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

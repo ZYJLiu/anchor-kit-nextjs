@@ -1,6 +1,4 @@
-import SolanaCounter from "@/components/counter";
-import { WalletButton } from "./components/WalletButton";
-import { CounterButton } from "./components/CounterButton";
+import CounterCard from "@/components/CounterCard";
 
 export default function Home() {
   return (
@@ -17,13 +15,11 @@ export default function Home() {
       </div>
 
       <div className="relative z-10">
-        <CounterButton />
-        <WalletButton />
-        <SolanaCounter />
+        <CounterCard />
       </div>
 
       <footer className="mt-20 text-center text-sm text-gray-500 relative z-10">
-        <p>Powered by Anchor, Web3.js, and Shadcn UI</p>
+        <p>Powered by Anchor, Codama, Kit, and Shadcn UI</p>
         <p className="mt-2">Created as a minimal Solana dApp example</p>
       </footer>
     </div>
