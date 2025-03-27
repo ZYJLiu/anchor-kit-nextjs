@@ -16,7 +16,7 @@ import {
 import { type ParsedIncrementInstruction } from '../instructions';
 
 export const COUNTER_PROGRAM_ADDRESS =
-  'C8ELYscK1BFKCPyo8cj3NQq5UexGxmAXpJeqsfLhANU4' as Address<'C8ELYscK1BFKCPyo8cj3NQq5UexGxmAXpJeqsfLhANU4'>;
+  '48yu95HJUshtVu8iajnzPvwNPaWWky1cMLiwnrtZHifU' as Address<'48yu95HJUshtVu8iajnzPvwNPaWWky1cMLiwnrtZHifU'>;
 
 export enum CounterAccount {
   Counter,
@@ -67,7 +67,7 @@ export function identifyCounterInstruction(
 }
 
 export type ParsedCounterInstruction<
-  TProgram extends string = 'C8ELYscK1BFKCPyo8cj3NQq5UexGxmAXpJeqsfLhANU4',
+  TProgram extends string = '48yu95HJUshtVu8iajnzPvwNPaWWky1cMLiwnrtZHifU',
 > = {
   instructionType: CounterInstruction.Increment;
 } & ParsedIncrementInstruction<TProgram>;

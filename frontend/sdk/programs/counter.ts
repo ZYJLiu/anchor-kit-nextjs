@@ -12,11 +12,11 @@ import {
   getBytesEncoder,
   type Address,
   type ReadonlyUint8Array,
-} from '@solana/kit';
-import { type ParsedIncrementInstruction } from '../instructions';
+} from "@solana/kit";
+import { type ParsedIncrementInstruction } from "../instructions";
 
 export const COUNTER_PROGRAM_ADDRESS =
-  'C8ELYscK1BFKCPyo8cj3NQq5UexGxmAXpJeqsfLhANU4' as Address<'C8ELYscK1BFKCPyo8cj3NQq5UexGxmAXpJeqsfLhANU4'>;
+  "48yu95HJUshtVu8iajnzPvwNPaWWky1cMLiwnrtZHifU" as Address<"48yu95HJUshtVu8iajnzPvwNPaWWky1cMLiwnrtZHifU">;
 
 export enum CounterAccount {
   Counter,
@@ -25,7 +25,7 @@ export enum CounterAccount {
 export function identifyCounterAccount(
   account: { data: ReadonlyUint8Array } | ReadonlyUint8Array
 ): CounterAccount {
-  const data = 'data' in account ? account.data : account;
+  const data = "data" in account ? account.data : account;
   if (
     containsBytes(
       data,
@@ -38,7 +38,7 @@ export function identifyCounterAccount(
     return CounterAccount.Counter;
   }
   throw new Error(
-    'The provided account could not be identified as a counter account.'
+    "The provided account could not be identified as a counter account."
   );
 }
 
@@ -49,7 +49,7 @@ export enum CounterInstruction {
 export function identifyCounterInstruction(
   instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array
 ): CounterInstruction {
-  const data = 'data' in instruction ? instruction.data : instruction;
+  const data = "data" in instruction ? instruction.data : instruction;
   if (
     containsBytes(
       data,
@@ -62,12 +62,12 @@ export function identifyCounterInstruction(
     return CounterInstruction.Increment;
   }
   throw new Error(
-    'The provided instruction could not be identified as a counter instruction.'
+    "The provided instruction could not be identified as a counter instruction."
   );
 }
 
 export type ParsedCounterInstruction<
-  TProgram extends string = 'C8ELYscK1BFKCPyo8cj3NQq5UexGxmAXpJeqsfLhANU4',
+  TProgram extends string = "C8ELYscK1BFKCPyo8cj3NQq5UexGxmAXpJeqsfLhANU4"
 > = {
   instructionType: CounterInstruction.Increment;
 } & ParsedIncrementInstruction<TProgram>;
