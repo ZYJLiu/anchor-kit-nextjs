@@ -17,7 +17,7 @@ import {
 } from "@solana/kit";
 import { createRecentSignatureConfirmationPromiseFactory } from "@solana/transaction-confirmation";
 import { type UiWalletAccount } from "@wallet-standard/react";
-import { useContext, useState, useEffect, useRef } from "react";
+import { useContext, useState, useEffect } from "react";
 import { RpcContext } from "../context/RpcContext";
 import {
   getIncrementInstruction,
